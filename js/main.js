@@ -3,20 +3,26 @@
    ========================================================= */
 
 /* ---------- Configuração ----------
-   Número do WhatsApp com DDI + DDD, só dígitos (ex.: '5511999999999').
-   Com o número preenchido, os botões e o formulário abrem a conversa com a mensagem pronta.
-   Sem ele, usamos o link do QR code do perfil e o formulário copia a mensagem para colar. */
+   Números com DDI + DDD, só dígitos. O formulário envia para quem for escolhido em "Falar com";
+   os links com data-wa-number abrem a conversa daquela pessoa com a mensagem pronta. */
+const CONTATOS = {
+  gabriela: { nome: 'Gabriela', numero: '5547991032711' },
+  felipe: { nome: 'Felipe', numero: '5547997119758' },
+};
+
+// Botões gerais (topo, menu, flutuante): WhatsApp oficial do perfil. Se preferirem um número fixo
+// com mensagem pronta, preencham aqui (ex.: CONTATOS.gabriela.numero).
 const WHATSAPP_NUMBER = '';
 const WHATSAPP_QR_LINK = 'https://wa.me/qr/AC6PTSZQ235WK1';
 
-function whatsappUrl(text) {
-  if (!WHATSAPP_NUMBER) return WHATSAPP_QR_LINK;
+function whatsappUrl(text, number = WHATSAPP_NUMBER) {
+  if (!number) return WHATSAPP_QR_LINK;
   const query = text ? `?text=${encodeURIComponent(text)}` : '';
-  return `https://wa.me/${WHATSAPP_NUMBER}${query}`;
+  return `https://wa.me/${number}${query}`;
 }
 
 document.querySelectorAll('[data-wa]').forEach((link) => {
-  link.href = whatsappUrl(link.dataset.wa);
+  link.href = whatsappUrl(link.dataset.wa, link.dataset.waNumber || WHATSAPP_NUMBER);
 });
 
 /* ---------- Cabeçalho ao rolar ---------- */
@@ -81,20 +87,6 @@ function showNote(message, state) {
   formNote.dataset.state = state;
 }
 
-// Cópia síncrona: roda dentro do clique, antes de a nova aba roubar o foco.
-function copyText(text) {
-  const area = document.createElement('textarea');
-  area.value = text;
-  area.setAttribute('readonly', '');
-  area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-  document.body.appendChild(area);
-  area.select();
-  let copied = false;
-  try { copied = document.execCommand('copy'); } catch (_) { copied = false; }
-  area.remove();
-  return copied;
-}
-
 form.addEventListener('submit', (event) => {
   event.preventDefault();
 
@@ -112,25 +104,14 @@ form.addEventListener('submit', (event) => {
   }
   nameInput.removeAttribute('aria-invalid');
 
-  const lines = [`Olá, FG Agency! Me chamo ${nome}${marca ? ` (${marca})` : ''}.`];
+  const contato = CONTATOS[form.elements.contato.value] || CONTATOS.gabriela;
+
+  const lines = [`Olá, ${contato.nome}! Vim pelo site da FG Agency. Me chamo ${nome}${marca ? ` (${marca})` : ''}.`];
   if (servico) lines.push(`Tenho interesse em: ${servico}.`);
   if (mensagem) lines.push(mensagem);
-  const text = lines.join('\n');
 
-  if (WHATSAPP_NUMBER) {
-    window.open(whatsappUrl(text), '_blank', 'noopener');
-    showNote('Abrindo o WhatsApp com a sua mensagem…', 'ok');
-    return;
-  }
-
-  const copied = copyText(text);
-  window.open(WHATSAPP_QR_LINK, '_blank', 'noopener');
-  showNote(
-    copied
-      ? 'Mensagem copiada! É só colar na conversa do WhatsApp que abriu.'
-      : 'Abrimos o WhatsApp — conte pra gente sobre o seu projeto por lá.',
-    'ok'
-  );
+  window.open(whatsappUrl(lines.join('\n'), contato.numero), '_blank', 'noopener');
+  showNote(`Abrindo o WhatsApp de ${contato.nome} com a sua mensagem…`, 'ok');
 });
 
 form.elements.nome.addEventListener('input', (event) => {

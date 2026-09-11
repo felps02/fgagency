@@ -408,6 +408,10 @@ h1, h2, h3 {
 .service p { margin-top: 0.65rem; font-weight: 300; color: var(--muted); }
 .service:hover h3 { color: var(--gold-light); }
 
+/* Com número ímpar de soluções, a última ocupa a linha inteira em vez de deixar um vão */
+.service:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.service:last-child:nth-child(odd) p { max-width: 40rem; }
+
 /* Linha dourada que se desenha ao entrar na tela (serviços e etapas) */
 .line-grow::before {
   content: "";
